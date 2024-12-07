@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:invmgm_flutter/models/category.dart';
+import 'package:invmgm_flutter/widgets/category_dropdown.dart';
 import 'package:invmgm_flutter/widgets/category_tile.dart';
 import 'package:invmgm_flutter/providers/category_provider.dart';
 
@@ -30,23 +31,6 @@ class CategoryTreeScreen extends ConsumerWidget {
   }
 }
 
-List<DropdownMenuItem<Category>> _buildDropdownItems(
-  List<Category> categories, {
-  int depth = 0,
-}) {
-  return categories.expand((category) {
-    final padding = ' ' * depth * 2; // Indent based on depth
-    return [
-      DropdownMenuItem<Category>(
-        value: category,
-        child: Text('$padding${category.name}'),
-      ),
-      if (category.children.isNotEmpty)
-        ..._buildDropdownItems(category.children, depth: depth + 1),
-    ];
-  }).toList();
-}
-
 void _showAddCategoryDialog(BuildContext context, WidgetRef ref) {
   final nameController = TextEditingController();
   Category? selectedParent; // Track the selected parent category
@@ -69,20 +53,12 @@ void _showAddCategoryDialog(BuildContext context, WidgetRef ref) {
                 final categoriesAsyncValue = ref.watch(allCategoriesProvider);
 
                 return categoriesAsyncValue.when(
-                  data: (categories) => DropdownButton<Category>(
-                    value: selectedParent, // Display the selected value
-                    isExpanded: true,
-                    hint: const Text('Select Parent Category'),
-                    items: [
-                      const DropdownMenuItem<Category>(
-                        value: null,
-                        child: Text('No Parent (Top Level)'),
-                      ),
-                      ..._buildDropdownItems(categories)
-                    ],
-                    onChanged: (Category? newValue) {
+                  data: (categories) => CategoryDropdown(
+                    categories: categories,
+                    selectedCategory: selectedParent,
+                    onSelected: (Category? newValue) {
                       setState(() {
-                        selectedParent = newValue; // Update the selected value
+                        selectedParent = newValue; // Update selected category
                       });
                     },
                   ),
@@ -114,7 +90,6 @@ void _showAddCategoryDialog(BuildContext context, WidgetRef ref) {
   );
 }
 
-/// Function to handle adding a category
 Future<void> onPressedAddCategory({
   required BuildContext context,
   required WidgetRef ref,
