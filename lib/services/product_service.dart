@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:invmgm_flutter/config/api_configuration.dart';
 import 'package:invmgm_flutter/models/product.dart';
 
-const String baseHost = "https://192.168.122.154:7089";
+const String baseHost = ApiConfiguration.baseHost;
 
 class ProductService {
   final String baseUrl = "$baseHost/api/Product";
