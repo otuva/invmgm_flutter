@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:invmgm_flutter/widgets/bar_chart.dart';
+import 'package:invmgm_flutter/widgets/categories_bar_chart.dart';
 import 'package:invmgm_flutter/widgets/orders_pie_chart.dart';
 
 class DashboardScreen extends ConsumerWidget {
