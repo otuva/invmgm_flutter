@@ -13,14 +13,12 @@ class OrdersScreen extends ConsumerStatefulWidget {
 }
 
 class _OrdersScreenState extends ConsumerState<OrdersScreen> {
-  OrderStatus? selectedStatus; // Track selected status for filtering
+  OrderStatus? selectedStatus; // Track the selected status for filtering
 
   @override
   Widget build(BuildContext context) {
-    // Fetch orders based on selected status
-    final ordersAsyncValue = selectedStatus == null
-        ? ref.watch(allOrdersProvider)
-        : ref.watch(ordersByStatusProvider(selectedStatus!));
+    // Fetch all orders once
+    final ordersAsyncValue = ref.watch(allOrdersProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -32,15 +30,19 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
           _buildStatusFilterChips(context), // Status filter chips
           Expanded(
             child: ordersAsyncValue.when(
-              data: (orders) => orders.isEmpty
-                  ? const Center(child: Text('No orders found'))
-                  : ListView.builder(
-                      itemCount: orders.length,
-                      itemBuilder: (context, index) {
-                        final order = orders[index];
-                        return _buildOrderCard(context, order);
-                      },
-                    ),
+              data: (orders) {
+                final filteredOrders =
+                    _filterOrdersByStatus(orders, selectedStatus);
+                return filteredOrders.isEmpty
+                    ? const Center(child: Text('No orders found'))
+                    : ListView.builder(
+                        itemCount: filteredOrders.length,
+                        itemBuilder: (context, index) {
+                          final order = filteredOrders[index];
+                          return _buildOrderCard(context, order);
+                        },
+                      );
+              },
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, stack) => Center(child: Text('Error: $error')),
             ),
@@ -48,10 +50,16 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddOrderDialog(context, ref), // Add new order dialog
+        onPressed: () =>
+            _showAddOrderDialog(context, ref), // Add new order dialog
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  List<Order> _filterOrdersByStatus(List<Order> orders, OrderStatus? status) {
+    if (status == null) return orders; // No filter applied
+    return orders.where((order) => order.status == status).toList();
   }
 
   Widget _buildStatusFilterChips(BuildContext context) {
@@ -132,7 +140,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
 
   void _showAddOrderDialog(BuildContext context, WidgetRef ref) {
     final emailController = TextEditingController();
-    final productController = TextEditingController(); // Add product logic here
+    final productController = TextEditingController();
 
     showDialog(
       context: context,
