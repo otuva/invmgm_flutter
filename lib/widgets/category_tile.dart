@@ -19,8 +19,7 @@ class CategoryTile extends ConsumerWidget {
             icon: const Icon(Icons.edit, size: 20),
             onPressed: () => _showEditCategoryDialog(context, ref, category),
           ),
-          if (category.children.isNotEmpty)
-            const Icon(Icons.arrow_drop_down),
+          if (category.children.isNotEmpty) const Icon(Icons.arrow_drop_down),
         ],
       ),
       children: category.children
@@ -28,41 +27,41 @@ class CategoryTile extends ConsumerWidget {
           .toList(),
     );
   }
+}
 
-  void _showEditCategoryDialog(
-      BuildContext context, WidgetRef ref, Category category) {
-    final nameController = TextEditingController(text: category.name);
+void _showEditCategoryDialog(
+    BuildContext context, WidgetRef ref, Category category) {
+  final nameController = TextEditingController(text: category.name);
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Category'),
-        content: TextField(
-          controller: nameController,
-          decoration: const InputDecoration(labelText: 'Category Name'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final updatedName = nameController.text.trim();
-
-              if (updatedName.isNotEmpty) {
-                await ref
-                    .read(categoryServiceProvider)
-                    .updateCategory(category.id, updatedName);
-                ref.invalidate(
-                    allCategoriesProvider); // Refresh the category tree
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Edit Category'),
+      content: TextField(
+        controller: nameController,
+        decoration: const InputDecoration(labelText: 'Category Name'),
       ),
-    );
-  }
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            final updatedName = nameController.text.trim();
+
+            if (updatedName.isNotEmpty) {
+              await ref
+                  .read(categoryServiceProvider)
+                  .updateCategory(category.id, updatedName);
+              ref.invalidate(
+                  allCategoriesProvider); // Refresh the category tree
+              Navigator.pop(context);
+            }
+          },
+          child: const Text('Save'),
+        ),
+      ],
+    ),
+  );
 }
