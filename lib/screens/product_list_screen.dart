@@ -58,11 +58,10 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) {
-        Category? tempSelectedCategory =
-            selectedCategory; // Initialize with current selection
+        Category? tempSelectedCategory = selectedCategory;
 
         return StatefulBuilder(
-          builder: (dialogContext, setState) => AlertDialog(
+          builder: (dialogContext, setDialogState) => AlertDialog(
             title: const Text('Filter by Category'),
             content: SingleChildScrollView(
               child: Consumer(
@@ -74,8 +73,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                       categories: categories,
                       selectedCategory: tempSelectedCategory,
                       onSelected: (Category? newValue) {
-                        // Update temporary selection
-                        setState(() {
+                        setDialogState(() {
                           tempSelectedCategory = newValue;
                         });
                       },
@@ -93,7 +91,6 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
               ),
               ElevatedButton(
                 onPressed: () {
-                  // Apply the selection globally
                   setState(() {
                     selectedCategory = tempSelectedCategory;
                   });
