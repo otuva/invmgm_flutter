@@ -14,8 +14,10 @@ class CategoriesBarChart extends ConsumerWidget {
 
     return categoriesAsyncValue.when(
       data: (categories) {
+        // Limit to the top 4 categories
+        final limitedCategories = categories.take(4).toList();
         return FutureBuilder<List<int>>(
-          future: _fetchProductCounts(ref, categories),
+          future: _fetchProductCounts(ref, limitedCategories),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -30,7 +32,8 @@ class CategoriesBarChart extends ConsumerWidget {
               child: BarChart(
                 BarChartData(
                   barTouchData: _getBarTouchData(context),
-                  titlesData: _getTitlesData(context, categories, productCounts),
+                  titlesData:
+                      _getTitlesData(context, limitedCategories, productCounts),
                   borderData: _getBorderData(),
                   barGroups: _getBarGroups(context, productCounts),
                   gridData: const FlGridData(show: false),
@@ -50,10 +53,12 @@ class CategoriesBarChart extends ConsumerWidget {
     );
   }
 
-  Future<List<int>> _fetchProductCounts(WidgetRef ref, List<Category> categories) async {
+  Future<List<int>> _fetchProductCounts(
+      WidgetRef ref, List<Category> categories) async {
     final List<int> productCounts = [];
     for (var category in categories) {
-      final products = await ref.read(productsByCategoryProvider(category.id).future);
+      final products =
+          await ref.read(productsByCategoryProvider(category.id).future);
       productCounts.add(products.length);
     }
     return productCounts;
@@ -76,7 +81,8 @@ class CategoriesBarChart extends ConsumerWidget {
     );
   }
 
-  FlTitlesData _getTitlesData(BuildContext context, List<Category> categories, List<int> productCounts) {
+  FlTitlesData _getTitlesData(BuildContext context, List<Category> categories,
+      List<int> productCounts) {
     return FlTitlesData(
       show: true,
       bottomTitles: AxisTitles(
@@ -132,7 +138,8 @@ class CategoriesBarChart extends ConsumerWidget {
     return FlBorderData(show: false);
   }
 
-  List<BarChartGroupData> _getBarGroups(BuildContext context, List<int> productCounts) {
+  List<BarChartGroupData> _getBarGroups(
+      BuildContext context, List<int> productCounts) {
     final barGradient = LinearGradient(
       colors: [
         Theme.of(context).colorScheme.primary,
