@@ -34,6 +34,9 @@ class CategoryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ExpansionTile(
       title: Text(category.name),
+      trailing: category.children.isNotEmpty
+          ? null
+          : const SizedBox.shrink(),
       children: category.children
           .map((child) => CategoryTile(category: child))
           .toList(),
