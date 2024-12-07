@@ -13,7 +13,8 @@ class OrdersScreen extends ConsumerStatefulWidget {
 }
 
 class _OrdersScreenState extends ConsumerState<OrdersScreen> {
-  OrderStatus? selectedStatus; // Track the selected status for filtering
+  Set<OrderStatus> selectedStatuses =
+      {}; // Track selected statuses for filtering
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +33,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
             child: ordersAsyncValue.when(
               data: (orders) {
                 final filteredOrders =
-                    _filterOrdersByStatus(orders, selectedStatus);
+                    _filterOrdersByStatuses(orders, selectedStatuses);
                 return filteredOrders.isEmpty
                     ? const Center(child: Text('No orders found'))
                     : ListView.builder(
@@ -57,9 +58,10 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
     );
   }
 
-  List<Order> _filterOrdersByStatus(List<Order> orders, OrderStatus? status) {
-    if (status == null) return orders; // No filter applied
-    return orders.where((order) => order.status == status).toList();
+  List<Order> _filterOrdersByStatuses(
+      List<Order> orders, Set<OrderStatus> statuses) {
+    if (statuses.isEmpty) return orders; // No filter applied
+    return orders.where((order) => statuses.contains(order.status)).toList();
   }
 
   Widget _buildStatusFilterChips(BuildContext context) {
@@ -73,10 +75,14 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 4.0),
               child: FilterChip(
                 label: Text(status.displayName),
-                selected: selectedStatus == status,
+                selected: selectedStatuses.contains(status),
                 onSelected: (bool isSelected) {
                   setState(() {
-                    selectedStatus = isSelected ? status : null;
+                    if (isSelected) {
+                      selectedStatuses.add(status);
+                    } else {
+                      selectedStatuses.remove(status);
+                    }
                   });
                 },
               ),
