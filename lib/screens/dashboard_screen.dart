@@ -20,7 +20,7 @@ class DashboardScreen extends ConsumerWidget {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             OrdersPieChart(),
             SizedBox(height: 16),
-            Text('Popular Product Categories',
+            Text('Products by Categories',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             SizedBox(height: 32),
             CategoriesBarChart(),
