@@ -5,7 +5,6 @@ import '../models/category.dart';
 const String baseHost = "https://192.168.122.154:7089";
 
 class CategoryService {
-  
   final String baseUrl = "$baseHost/api/Category";
 
   Future<Category?> createCategory(String name, int parentId) async {
@@ -17,7 +16,10 @@ class CategoryService {
     );
 
     if (response.statusCode == 200) {
-      return Category.fromJson(jsonDecode(response.body)['data']);
+      final responseData = jsonDecode(response.body);
+      final int newCategoryId = responseData['data']['id'];
+
+      return getCategoryById(newCategoryId);
     } else {
       throw Exception('Failed to create category');
     }
