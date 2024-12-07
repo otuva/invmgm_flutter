@@ -1,39 +1,169 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:invmgm_flutter/screens/orders_by_status_screen.dart';
 import '../models/order.dart';
 import '../models/order_status.dart';
 import '../providers/order_provider.dart';
 
-class OrderListScreen extends ConsumerWidget {
-  const OrderListScreen({super.key});
+class OrdersScreen extends ConsumerStatefulWidget {
+  const OrdersScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final ordersAsyncValue = ref.watch(allOrdersProvider);
+  ConsumerState<OrdersScreen> createState() => _OrdersScreenState();
+}
+
+class _OrdersScreenState extends ConsumerState<OrdersScreen> {
+  OrderStatus? selectedStatus; // Track selected status for filtering
+
+  @override
+  Widget build(BuildContext context) {
+    // Fetch orders based on selected status
+    final ordersAsyncValue = selectedStatus == null
+        ? ref.watch(allOrdersProvider)
+        : ref.watch(ordersByStatusProvider(selectedStatus!));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Orders')),
-      body: ordersAsyncValue.when(
-        data: (orders) => ListView.builder(
-          itemCount: orders.length,
-          itemBuilder: (context, index) {
-            final order = orders[index];
-            return ListTile(
-              title: Text('Order #${order.id} - ${order.email}'),
-              subtitle: Text(
-                '${order.status.displayName} | ${order.orderDate.toLocal()}',
+      appBar: AppBar(
+        title: const Text('Orders'),
+        centerTitle: true,
+      ),
+      body: Column(
+        children: [
+          _buildStatusFilterChips(context), // Status filter chips
+          Expanded(
+            child: ordersAsyncValue.when(
+              data: (orders) => orders.isEmpty
+                  ? const Center(child: Text('No orders found'))
+                  : ListView.builder(
+                      itemCount: orders.length,
+                      itemBuilder: (context, index) {
+                        final order = orders[index];
+                        return _buildOrderCard(context, order);
+                      },
+                    ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Center(child: Text('Error: $error')),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddOrderDialog(context, ref), // Add new order dialog
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildStatusFilterChips(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: OrderStatus.values.map((status) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+              child: FilterChip(
+                label: Text(status.displayName),
+                selected: selectedStatus == status,
+                onSelected: (bool isSelected) {
+                  setState(() {
+                    selectedStatus = isSelected ? status : null;
+                  });
+                },
               ),
-              trailing: IconButton(
-                icon: const Icon(Icons.edit),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOrderCard(BuildContext context, Order order) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Order #${order.id}',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            Text('Email: ${order.email}'),
+            Text('Date: ${order.orderDate.toLocal()}'),
+            GestureDetector(
+              onTap: () => _navigateToStatusScreen(context, order.status),
+              child: Text(
+                'Status: ${order.status.displayName}',
+                style: const TextStyle(
+                  color: Colors.blue,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                icon: const Icon(Icons.edit, color: Colors.orange),
                 onPressed: () {
                   _showChangeStatusDialog(context, ref, order);
                 },
               ),
-            );
-          },
+            ),
+          ],
         ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error: $error')),
+      ),
+    );
+  }
+
+  void _navigateToStatusScreen(BuildContext context, OrderStatus status) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OrdersByStatusScreen(status: status),
+      ),
+    );
+  }
+
+  void _showAddOrderDialog(BuildContext context, WidgetRef ref) {
+    final emailController = TextEditingController();
+    final productController = TextEditingController(); // Add product logic here
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add New Order'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(labelText: 'Email'),
+            ),
+            TextField(
+              controller: productController,
+              decoration: const InputDecoration(labelText: 'Product Details'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              // Add order logic
+              Navigator.pop(context);
+            },
+            child: const Text('Add'),
+          ),
+        ],
       ),
     );
   }
