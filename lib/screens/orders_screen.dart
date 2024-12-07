@@ -184,44 +184,61 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
 
   void _showChangeStatusDialog(
       BuildContext context, WidgetRef ref, Order order) {
-    OrderStatus? newStatus = order.status;
+    OrderStatus? newStatus = order.status; // Initialize with current status
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Change Order Status'),
-        content: DropdownButton<OrderStatus>(
-          value: newStatus,
-          onChanged: (OrderStatus? status) {
-            if (status != null) {
-              newStatus = status;
-            }
-          },
-          items: OrderStatus.values.map((status) {
-            return DropdownMenuItem<OrderStatus>(
-              value: status,
-              child: Text(status.displayName),
-            );
-          }).toList(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (newStatus != null && newStatus != order.status) {
-                await ref
-                    .read(orderServiceProvider)
-                    .changeOrderStatus(order.id, newStatus!);
-                ref.invalidate(allOrdersProvider); // Refresh orders
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Change Order Status'),
+          content: DropdownButton<OrderStatus>(
+            value: newStatus, // Reflect current status
+            onChanged: (OrderStatus? status) {
+              if (status != null) {
+                setState(() {
+                  newStatus = status; // Update new status locally in the dialog
+                });
               }
-              Navigator.pop(dialogContext);
             },
-            child: const Text('Apply'),
+            items: OrderStatus.values.map((status) {
+              return DropdownMenuItem<OrderStatus>(
+                value: status,
+                child: Text(status.displayName),
+              );
+            }).toList(),
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext), // Close dialog
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (newStatus != null && newStatus != order.status) {
+                  // Call the service to change the status
+                  await ref
+                      .read(orderServiceProvider)
+                      .changeOrderStatus(order.id, newStatus!);
+
+                  // Refresh the orders
+                  ref.invalidate(allOrdersProvider);
+
+                  // Close the dialog and show a success message
+                  Navigator.pop(dialogContext);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                          'Order #${order.id} status updated to ${newStatus?.displayName}'),
+                    ),
+                  );
+                } else {
+                  Navigator.pop(dialogContext); // Close without changes
+                }
+              },
+              child: const Text('Apply'),
+            ),
+          ],
+        ),
       ),
     );
   }
