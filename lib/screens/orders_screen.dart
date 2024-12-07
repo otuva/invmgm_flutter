@@ -183,7 +183,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
                   onChanged: (value) {
                     // Dynamically validate email format
                     setState(() {
-                      final isValid = _isValidEmail(value);
+                      // final isValid = _isValidEmail(value);
                       emailController.text = value;
                       emailController.selection = TextSelection.fromPosition(
                         TextPosition(offset: emailController.text.length),
