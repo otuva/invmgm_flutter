@@ -16,7 +16,7 @@ class CategoryService {
       body: jsonEncode({'name': name, 'parentId': parentId}),
     );
 
-    if (response.statusCode == 201) {
+    if (response.statusCode == 200) {
       return Category.fromJson(jsonDecode(response.body)['data']);
     } else {
       throw Exception('Failed to create category');
@@ -31,7 +31,7 @@ class CategoryService {
       body: jsonEncode({'id': id}),
     );
 
-    if (response.statusCode != 201) {
+    if (response.statusCode != 200) {
       throw Exception('Failed to delete category');
     }
   }
@@ -44,7 +44,7 @@ class CategoryService {
       body: jsonEncode({'id': id, 'name': name}),
     );
 
-    if (response.statusCode != 201) {
+    if (response.statusCode != 200) {
       throw Exception('Failed to update category');
     }
   }
@@ -64,7 +64,7 @@ class CategoryService {
     final url = Uri.parse('$baseUrl/GetAllCategories');
     final response = await http.get(url);
 
-    if (response.statusCode == 201) {
+    if (response.statusCode == 200) {
       return Category.parseCategories(response.body);
     } else {
       throw Exception('Failed to fetch categories');
