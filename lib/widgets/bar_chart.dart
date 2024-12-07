@@ -1,207 +1,158 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/category.dart';
+import '../providers/category_provider.dart';
+import '../providers/product_provider.dart';
 
-class _BarChart extends StatelessWidget {
-  const _BarChart();
+class CategoriesBarChart extends ConsumerWidget {
+  const CategoriesBarChart({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return BarChart(
-      BarChartData(
-        barTouchData: barTouchData,
-        titlesData: titlesData,
-        borderData: borderData,
-        barGroups: barGroups,
-        gridData: const FlGridData(show: false),
-        alignment: BarChartAlignment.spaceAround,
-        maxY: 20,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final categoriesAsyncValue = ref.watch(allCategoriesProvider);
+
+    return categoriesAsyncValue.when(
+      data: (categories) {
+        return FutureBuilder<List<int>>(
+          future: _fetchProductCounts(ref, categories),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            }
+
+            final productCounts = snapshot.data ?? [];
+            return AspectRatio(
+              aspectRatio: 1.6,
+              child: BarChart(
+                BarChartData(
+                  barTouchData: _getBarTouchData(context),
+                  titlesData: _getTitlesData(context, categories),
+                  borderData: _getBorderData(),
+                  barGroups: _getBarGroups(context, productCounts),
+                  gridData: const FlGridData(show: false),
+                  alignment: BarChartAlignment.spaceAround,
+                  maxY: (productCounts.isNotEmpty
+                          ? productCounts.reduce((a, b) => a > b ? a : b)
+                          : 10)
+                      .toDouble(),
+                ),
+              ),
+            );
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(child: Text('Error: $error')),
+    );
+  }
+
+  Future<List<int>> _fetchProductCounts(
+      WidgetRef ref, List<Category> categories) async {
+    final List<int> productCounts = [];
+    for (var category in categories) {
+      final products =
+          await ref.read(productsByCategoryProvider(category.id).future);
+      productCounts.add(products.length);
+    }
+    return productCounts;
+  }
+
+  BarTouchData _getBarTouchData(BuildContext context) {
+    return BarTouchData(
+      touchTooltipData: BarTouchTooltipData(
+        // tooltipBgColor: Theme.of(context).colorScheme.surface,
+        tooltipMargin: 8,
+        getTooltipItem: (
+          BarChartGroupData group,
+          int groupIndex,
+          BarChartRodData rod,
+          int rodIndex,
+        ) {
+          return BarTooltipItem(
+            '${rod.toY.round()} products',
+            TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+          );
+        },
       ),
     );
   }
 
-  BarTouchData get barTouchData => BarTouchData(
-        enabled: false,
-        touchTooltipData: BarTouchTooltipData(
-          getTooltipColor: (group) => Colors.transparent,
-          tooltipPadding: EdgeInsets.zero,
-          tooltipMargin: 8,
-          getTooltipItem: (
-            BarChartGroupData group,
-            int groupIndex,
-            BarChartRodData rod,
-            int rodIndex,
-          ) {
-            return BarTooltipItem(
-              rod.toY.round().toString(),
-              const TextStyle(
-                color: Colors.cyan,
-                fontWeight: FontWeight.bold,
-              ),
-            );
+  FlTitlesData _getTitlesData(BuildContext context, List<Category> categories) {
+    return FlTitlesData(
+      show: true,
+      bottomTitles: AxisTitles(
+        sideTitles: SideTitles(
+          showTitles: true,
+          reservedSize: 30,
+          getTitlesWidget: (value, meta) {
+            final index = value.toInt();
+            if (index >= 0 && index < categories.length) {
+              return SideTitleWidget(
+                axisSide: meta.axisSide,
+                space: 8.0,
+                child: Text(
+                  categories[index].name,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            }
+            return const SizedBox.shrink();
           },
         ),
-      );
-
-  Widget getTitles(double value, TitleMeta meta) {
-    final style = TextStyle(
-      color: Colors.blue,
-      fontWeight: FontWeight.bold,
-      fontSize: 14,
-    );
-    String text;
-    switch (value.toInt()) {
-      case 0:
-        text = 'Mn';
-        break;
-      case 1:
-        text = 'Te';
-        break;
-      case 2:
-        text = 'Wd';
-        break;
-      case 3:
-        text = 'Tu';
-        break;
-      case 4:
-        text = 'Fr';
-        break;
-      case 5:
-        text = 'St';
-        break;
-      case 6:
-        text = 'Sn';
-        break;
-      default:
-        text = '';
-        break;
-    }
-    return SideTitleWidget(
-      axisSide: meta.axisSide,
-      space: 4,
-      child: Text(text, style: style),
+      ),
+      leftTitles: const AxisTitles(
+        sideTitles: SideTitles(showTitles: false),
+      ),
+      topTitles: const AxisTitles(
+        sideTitles: SideTitles(showTitles: false),
+      ),
+      rightTitles: const AxisTitles(
+        sideTitles: SideTitles(showTitles: false),
+      ),
     );
   }
 
-  FlTitlesData get titlesData => FlTitlesData(
-        show: true,
-        bottomTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            reservedSize: 30,
-            getTitlesWidget: getTitles,
-          ),
-        ),
-        leftTitles: const AxisTitles(
-          sideTitles: SideTitles(showTitles: false),
-        ),
-        topTitles: const AxisTitles(
-          sideTitles: SideTitles(showTitles: false),
-        ),
-        rightTitles: const AxisTitles(
-          sideTitles: SideTitles(showTitles: false),
-        ),
-      );
+  FlBorderData _getBorderData() {
+    return FlBorderData(show: false);
+  }
 
-  FlBorderData get borderData => FlBorderData(
-        show: false,
-      );
+  List<BarChartGroupData> _getBarGroups(
+      BuildContext context, List<int> productCounts) {
+    final barGradient = LinearGradient(
+      colors: [
+        Theme.of(context).colorScheme.primary,
+        Theme.of(context).colorScheme.secondary,
+      ],
+      begin: Alignment.bottomCenter,
+      end: Alignment.topCenter,
+    );
 
-  LinearGradient get _barsGradient => LinearGradient(
-        colors: [
-          Colors.blueAccent,
-          Colors.cyan,
-        ],
-        begin: Alignment.bottomCenter,
-        end: Alignment.topCenter,
-      );
-
-  List<BarChartGroupData> get barGroups => [
-        BarChartGroupData(
-          x: 0,
+    return List.generate(
+      productCounts.length,
+      (index) {
+        return BarChartGroupData(
+          x: index,
           barRods: [
             BarChartRodData(
-              toY: 8,
-              gradient: _barsGradient,
-            )
+              toY: productCounts[index].toDouble(),
+              gradient: barGradient,
+            ),
           ],
           showingTooltipIndicators: [0],
-        ),
-        BarChartGroupData(
-          x: 1,
-          barRods: [
-            BarChartRodData(
-              toY: 10,
-              gradient: _barsGradient,
-            )
-          ],
-          showingTooltipIndicators: [0],
-        ),
-        BarChartGroupData(
-          x: 2,
-          barRods: [
-            BarChartRodData(
-              toY: 14,
-              gradient: _barsGradient,
-            )
-          ],
-          showingTooltipIndicators: [0],
-        ),
-        BarChartGroupData(
-          x: 3,
-          barRods: [
-            BarChartRodData(
-              toY: 15,
-              gradient: _barsGradient,
-            )
-          ],
-          showingTooltipIndicators: [0],
-        ),
-        BarChartGroupData(
-          x: 4,
-          barRods: [
-            BarChartRodData(
-              toY: 13,
-              gradient: _barsGradient,
-            )
-          ],
-          showingTooltipIndicators: [0],
-        ),
-        BarChartGroupData(
-          x: 5,
-          barRods: [
-            BarChartRodData(
-              toY: 10,
-              gradient: _barsGradient,
-            )
-          ],
-          showingTooltipIndicators: [0],
-        ),
-        BarChartGroupData(
-          x: 6,
-          barRods: [
-            BarChartRodData(
-              toY: 16,
-              gradient: _barsGradient,
-            )
-          ],
-          showingTooltipIndicators: [0],
-        ),
-      ];
-}
-
-class CategoriesBarChart extends StatefulWidget {
-  const CategoriesBarChart({super.key});
-
-  @override
-  State<StatefulWidget> createState() => CategoriesBarChartState();
-}
-
-class CategoriesBarChartState extends State<CategoriesBarChart> {
-  @override
-  Widget build(BuildContext context) {
-    return const AspectRatio(
-      aspectRatio: 1.6,
-      child: _BarChart(),
+        );
+      },
     );
   }
 }
