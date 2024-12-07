@@ -30,7 +30,7 @@ class CategoriesBarChart extends ConsumerWidget {
               child: BarChart(
                 BarChartData(
                   barTouchData: _getBarTouchData(context),
-                  titlesData: _getTitlesData(context, categories),
+                  titlesData: _getTitlesData(context, categories, productCounts),
                   borderData: _getBorderData(),
                   barGroups: _getBarGroups(context, productCounts),
                   gridData: const FlGridData(show: false),
@@ -50,12 +50,10 @@ class CategoriesBarChart extends ConsumerWidget {
     );
   }
 
-  Future<List<int>> _fetchProductCounts(
-      WidgetRef ref, List<Category> categories) async {
+  Future<List<int>> _fetchProductCounts(WidgetRef ref, List<Category> categories) async {
     final List<int> productCounts = [];
     for (var category in categories) {
-      final products =
-          await ref.read(productsByCategoryProvider(category.id).future);
+      final products = await ref.read(productsByCategoryProvider(category.id).future);
       productCounts.add(products.length);
     }
     return productCounts;
@@ -72,39 +70,45 @@ class CategoriesBarChart extends ConsumerWidget {
           BarChartRodData rod,
           int rodIndex,
         ) {
-          return BarTooltipItem(
-            '${rod.toY.round()} products',
-            TextStyle(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.bold,
-            ),
-          );
+          return null;
         },
       ),
     );
   }
 
-  FlTitlesData _getTitlesData(BuildContext context, List<Category> categories) {
+  FlTitlesData _getTitlesData(BuildContext context, List<Category> categories, List<int> productCounts) {
     return FlTitlesData(
       show: true,
       bottomTitles: AxisTitles(
         sideTitles: SideTitles(
           showTitles: true,
-          reservedSize: 30,
+          reservedSize: 50, // Increased size to fit two lines
           getTitlesWidget: (value, meta) {
             final index = value.toInt();
             if (index >= 0 && index < categories.length) {
               return SideTitleWidget(
                 axisSide: meta.axisSide,
                 space: 8.0,
-                child: Text(
-                  categories[index].name,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+                child: Column(
+                  children: [
+                    Text(
+                      categories[index].name,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      '${productCounts[index]} products',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.secondary,
+                        fontSize: 10,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
               );
             }
@@ -128,8 +132,7 @@ class CategoriesBarChart extends ConsumerWidget {
     return FlBorderData(show: false);
   }
 
-  List<BarChartGroupData> _getBarGroups(
-      BuildContext context, List<int> productCounts) {
+  List<BarChartGroupData> _getBarGroups(BuildContext context, List<int> productCounts) {
     final barGradient = LinearGradient(
       colors: [
         Theme.of(context).colorScheme.primary,
