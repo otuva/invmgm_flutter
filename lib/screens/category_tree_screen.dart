@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/category_provider.dart';
-import '../models/category.dart';
+import 'package:invmgm_flutter/widgets/category_tile.dart';
+import 'package:invmgm_flutter/providers/category_provider.dart';
 
 class CategoryTreeScreen extends ConsumerWidget {
   const CategoryTreeScreen({super.key});
@@ -21,25 +21,6 @@ class CategoryTreeScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text('Error: $error')),
       ),
-    );
-  }
-}
-
-class CategoryTile extends StatelessWidget {
-  const CategoryTile({super.key, required this.category});
-
-  final Category category;
-
-  @override
-  Widget build(BuildContext context) {
-    return ExpansionTile(
-      title: Text(category.name),
-      trailing: category.children.isNotEmpty
-          ? null
-          : const SizedBox.shrink(),
-      children: category.children
-          .map((child) => CategoryTile(category: child))
-          .toList(),
     );
   }
 }
