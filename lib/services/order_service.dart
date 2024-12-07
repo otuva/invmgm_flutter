@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../models/order.dart';
 import '../models/order_status.dart';
@@ -8,7 +9,7 @@ const String baseHost = "https://192.168.122.154:7089";
 class OrderService {
   final String baseUrl = "$baseHost/api/Order";
 
-  Future<int> createOrder(String email, List<OrderItem> items) async {
+  Future<Order> createOrder(String email, List<OrderItem> items) async {
     final url = Uri.parse('$baseUrl/CreateOrder');
     final response = await http.post(
       url,
@@ -19,12 +20,13 @@ class OrderService {
       }),
     );
 
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      return responseData['data']['orderId'];
+    final responseData = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && responseData['isSuccess']) {
+      final orderId = responseData['data']['orderId'];
+      return getOrderById(orderId); // Fetch and return the created order
     } else {
-      final responseData = jsonDecode(response.body);
-      throw Exception(responseData['message']);
+      throw ErrorDescription(responseData['message'] ?? 'Failed to create order');
     }
   }
 
@@ -36,7 +38,7 @@ class OrderService {
       final responseData = jsonDecode(response.body)['data'];
       return Order.fromJson(responseData);
     } else {
-      throw Exception('Failed to fetch order: ${response.body}');
+      throw ErrorDescription('Failed to fetch order: ${response.body}');
     }
   }
 
@@ -49,7 +51,7 @@ class OrderService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Failed to change status: ${response.body}');
+      throw ErrorDescription('Failed to change status: ${response.body}');
     }
   }
 
@@ -60,18 +62,19 @@ class OrderService {
     if (response.statusCode == 200) {
       return parseOrders(response.body);
     } else {
-      throw Exception('Failed to fetch orders: ${response.body}');
+      throw ErrorDescription('Failed to fetch orders: ${response.body}');
     }
   }
 
   Future<List<Order>> getOrdersByStatus(OrderStatus status) async {
-    final url = Uri.parse('$baseUrl/GetOrdersByStatus?Status=${status.toInt()}');
+    final url =
+        Uri.parse('$baseUrl/GetOrdersByStatus?Status=${status.toInt()}');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
       return parseOrders(response.body);
     } else {
-      throw Exception('Failed to fetch orders by status: ${response.body}');
+      throw ErrorDescription('Failed to fetch orders by status: ${response.body}');
     }
   }
 }
