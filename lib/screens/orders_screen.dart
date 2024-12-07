@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:invmgm_flutter/models/product.dart';
+import 'package:invmgm_flutter/providers/product_provider.dart';
 import 'package:invmgm_flutter/screens/orders_by_status_screen.dart';
 import '../models/order.dart';
 import '../models/order_status.dart';
@@ -146,40 +148,152 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
 
   void _showAddOrderDialog(BuildContext context, WidgetRef ref) {
     final emailController = TextEditingController();
-    final productController = TextEditingController();
+    final quantityController = TextEditingController();
+    Product? selectedProduct;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add New Order'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Add New Order'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Email Input Field
+                TextField(
+                  controller: emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    hintText: 'Enter customer email',
+                    errorText:
+                        null, // Will be set dynamically if email is invalid
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  onChanged: (value) {
+                    // Dynamically validate email format
+                    setState(() {
+                      final isValid = _isValidEmail(value);
+                      emailController.text = value;
+                      emailController.selection = TextSelection.fromPosition(
+                        TextPosition(offset: emailController.text.length),
+                      );
+                    });
+                  },
+                ),
+                const SizedBox(height: 8),
+                // Quantity Input Field
+                TextField(
+                  controller: quantityController,
+                  decoration: const InputDecoration(
+                    labelText: 'Quantity',
+                    hintText: 'Enter quantity',
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 8),
+                // Product Dropdown
+                Consumer(
+                  builder: (context, ref, child) {
+                    final productsAsyncValue = ref.watch(allProductsProvider);
+
+                    return productsAsyncValue.when(
+                      data: (products) => DropdownButton<Product>(
+                        value: selectedProduct,
+                        isExpanded: true,
+                        hint: const Text('Select Product'),
+                        items: products.map((product) {
+                          return DropdownMenuItem<Product>(
+                            value: product,
+                            child: Text(product.name),
+                          );
+                        }).toList(),
+                        onChanged: (Product? newValue) {
+                          setState(() {
+                            selectedProduct = newValue;
+                          });
+                        },
+                      ),
+                      loading: () => const CircularProgressIndicator(),
+                      error: (error, stack) => Text('Error: $error'),
+                    );
+                  },
+                ),
+              ],
             ),
-            TextField(
-              controller: productController,
-              decoration: const InputDecoration(labelText: 'Product Details'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext), // Close dialog
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final email = emailController.text.trim();
+                final quantity = int.tryParse(quantityController.text) ?? 0;
+
+                if (!_isValidEmail(email)) {
+                  // Show error for invalid email
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a valid email')),
+                  );
+                  return;
+                }
+
+                if (quantity <= 0) {
+                  // Show error for invalid quantity
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Please enter a valid quantity')),
+                  );
+                  return;
+                }
+
+                if (selectedProduct == null) {
+                  // Show error for no product selected
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please select a product')),
+                  );
+                  return;
+                }
+
+                try {
+                  // Create a new order
+                  final orderItems = [
+                    OrderItem(
+                      productId: selectedProduct!.id,
+                      quantity: quantity,
+                      totalPrice: selectedProduct!.price * quantity,
+                    )
+                  ];
+                  await ref
+                      .read(orderServiceProvider)
+                      .createOrder(email, orderItems);
+
+                  ref.invalidate(allOrdersProvider); // Refresh orders
+
+                  Navigator.pop(dialogContext); // Close dialog
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Order added successfully')),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error creating order: $e')),
+                  );
+                }
+              },
+              child: const Text('Add'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              // Add order logic
-              Navigator.pop(context);
-            },
-            child: const Text('Add'),
-          ),
-        ],
       ),
     );
+  }
+
+// Email Validation Helper
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+    return emailRegex.hasMatch(email);
   }
 
   void _showChangeStatusDialog(
