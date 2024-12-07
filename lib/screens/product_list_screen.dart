@@ -127,7 +127,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
             Align(
               alignment: Alignment.centerRight,
               child: IconButton(
-                icon: const Icon(Icons.delete, color: Colors.red),
+                icon: const Icon(Icons.delete),
                 onPressed: () => _confirmDeleteProduct(context, ref, product),
               ),
             ),
