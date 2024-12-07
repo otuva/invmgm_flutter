@@ -1,8 +1,8 @@
 import 'dart:io';
+import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:invmgm_flutter/screens/main_screen.dart';
-import 'package:invmgm_flutter/theme/theme.dart';
 
 // ignore certs
 class MyHttpOverrides extends HttpOverrides {
@@ -27,8 +27,8 @@ class InvMgmApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Inventory Management',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: FlexThemeData.light(scheme: FlexScheme.deepPurple),
+      darkTheme: FlexThemeData.dark(scheme: FlexScheme.deepPurple),
       themeMode: ThemeMode.system,
       home: const MainScreen(),
     );
