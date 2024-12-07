@@ -38,6 +38,7 @@ dependencies:
   http: ^1.2.2
   flutter_riverpod: ^2.6.1
   flex_color_scheme: ^8.0.2
+  fl_chart: ^0.69.2
 
 dev_dependencies:
   flutter_test:
