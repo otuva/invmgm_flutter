@@ -19,7 +19,7 @@ class OrderService {
       }),
     );
 
-    if (response.statusCode == 201) {
+    if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
       return responseData['data']['orderId'];
     } else {
@@ -32,7 +32,7 @@ class OrderService {
     final url = Uri.parse('$baseUrl/GetOrderById?Id=$id');
     final response = await http.get(url);
 
-    if (response.statusCode == 201) {
+    if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body)['data'];
       return Order.fromJson(responseData);
     } else {
@@ -48,7 +48,7 @@ class OrderService {
       body: jsonEncode({'orderId': orderId, 'orderStatus': status.toInt()}),
     );
 
-    if (response.statusCode != 201) {
+    if (response.statusCode != 200) {
       throw Exception('Failed to change status: ${response.body}');
     }
   }
@@ -68,7 +68,7 @@ class OrderService {
     final url = Uri.parse('$baseUrl/GetOrdersByStatus?Status=${status.toInt()}');
     final response = await http.get(url);
 
-    if (response.statusCode == 201) {
+    if (response.statusCode == 200) {
       return parseOrders(response.body);
     } else {
       throw Exception('Failed to fetch orders by status: ${response.body}');
