@@ -6,37 +6,136 @@ import 'package:invmgm_flutter/widgets/category_dropdown.dart';
 import 'package:invmgm_flutter/models/product.dart';
 import 'package:invmgm_flutter/providers/product_provider.dart';
 
-class ProductListScreen extends ConsumerWidget {
+class ProductListScreen extends ConsumerStatefulWidget {
   const ProductListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final productsAsyncValue = ref.watch(allProductsProvider);
+  ConsumerState<ProductListScreen> createState() => _ProductListScreenState();
+}
+
+class _ProductListScreenState extends ConsumerState<ProductListScreen> {
+  Category? selectedCategory; // Track the selected category for filtering
+
+  @override
+  Widget build(BuildContext context) {
+    final productsAsyncValue = selectedCategory == null
+        ? ref.watch(
+            allProductsProvider) // Fetch all products if no category is selected
+        : ref.watch(productsByCategoryProvider(
+            selectedCategory!.id)); // Fetch filtered products
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Products')),
+      appBar: AppBar(
+        title: const Text('Products'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: () => _showFilterDialog(context),
+          ),
+        ],
+      ),
       body: productsAsyncValue.when(
-        data: (products) => ListView.builder(
-          itemCount: products.length,
-          itemBuilder: (context, index) {
-            final product = products[index];
-            return ListTile(
-              title: Text(product.name),
-              subtitle:
-                  Text('Price: \$${product.price} | Stock: ${product.stock}'),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete, color: Colors.red),
-                onPressed: () => _confirmDeleteProduct(context, ref, product),
+        data: (products) => products.isEmpty
+            ? const Center(child: Text('No products found'))
+            : ListView.builder(
+                itemCount: products.length,
+                itemBuilder: (context, index) {
+                  final product = products[index];
+                  return _buildProductCard(product, context);
+                },
               ),
-            );
-          },
-        ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text('Error: $error')),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddProductDialog(context, ref),
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  void _showFilterDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        Category? tempSelectedCategory =
+            selectedCategory; // Initialize with current selection
+
+        return StatefulBuilder(
+          builder: (dialogContext, setState) => AlertDialog(
+            title: const Text('Filter by Category'),
+            content: SingleChildScrollView(
+              child: Consumer(
+                builder: (context, ref, child) {
+                  final categoriesAsyncValue = ref.watch(allCategoriesProvider);
+
+                  return categoriesAsyncValue.when(
+                    data: (categories) => CategoryDropdown(
+                      categories: categories,
+                      selectedCategory: tempSelectedCategory,
+                      onSelected: (Category? newValue) {
+                        // Update temporary selection
+                        setState(() {
+                          tempSelectedCategory = newValue;
+                        });
+                      },
+                    ),
+                    loading: () => const CircularProgressIndicator(),
+                    error: (error, stack) => Text('Error: $error'),
+                  );
+                },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  // Apply the selection globally
+                  setState(() {
+                    selectedCategory = tempSelectedCategory;
+                  });
+                  Navigator.pop(dialogContext);
+                },
+                child: const Text('Apply'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildProductCard(Product product, BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              product.name,
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            Text('Description: ${product.description}'),
+            Text('Price: \$${product.price.toStringAsFixed(2)}'),
+            Text('Stock: ${product.stock}'),
+            Text('Category: ${product.categoryName ?? 'Unknown'}'),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () => _confirmDeleteProduct(context, ref, product),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
