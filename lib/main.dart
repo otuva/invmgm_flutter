@@ -1,9 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:invmgm_flutter/screens/orders_screen.dart';
-import 'package:invmgm_flutter/screens/product_list_screen.dart';
-import 'screens/category_tree_screen.dart';
+import 'package:invmgm_flutter/screens/main_screen.dart';
 
 // ignore certs
 class MyHttpOverrides extends HttpOverrides {
@@ -27,9 +25,9 @@ class InvMgmApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Category App',
+      title: 'Inventory Management',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: const OrdersScreen(),
+      home: const MainScreen(),
     );
   }
 }
