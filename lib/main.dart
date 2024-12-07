@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:invmgm_flutter/screens/product_list_screen.dart';
 import 'screens/category_tree_screen.dart';
 
 // ignore certs
@@ -27,7 +28,7 @@ class InvMgmApp extends StatelessWidget {
     return MaterialApp(
       title: 'Category App',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: const CategoryTreeScreen(),
+      home: const ProductListScreen(),
     );
   }
 }
