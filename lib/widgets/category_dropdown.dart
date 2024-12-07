@@ -24,7 +24,7 @@ class CategoryDropdown extends StatelessWidget {
       items: [
         const DropdownMenuItem<Category>(
           value: null,
-          child: Text('No Parent (Top Level)'),
+          child: Text('No category'),
         ),
         ..._buildDropdownItems(categories),
       ],
