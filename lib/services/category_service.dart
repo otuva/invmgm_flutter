@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/category_model.dart';
+import '../models/category.dart';
 
 const String baseHost = "https://192.168.122.154:7089";
 
