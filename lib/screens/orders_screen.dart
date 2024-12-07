@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:invmgm_flutter/models/product.dart';
 import 'package:invmgm_flutter/providers/product_provider.dart';
+import 'package:invmgm_flutter/screens/order_details_screen.dart';
 import 'package:invmgm_flutter/screens/orders_by_status_screen.dart';
 import '../models/order.dart';
 import '../models/order_status.dart';
@@ -99,39 +100,48 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Order #${order.id}',
-              style: Theme.of(context).textTheme.headlineSmall,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OrderDetailsScreen(orderId: order.id),
             ),
-            const SizedBox(height: 8),
-            Text('Email: ${order.email}'),
-            Text('Date: ${order.orderDate.toLocal()}'),
-            GestureDetector(
-              onTap: () => _navigateToStatusScreen(context, order.status),
-              child: Text(
-                'Status: ${order.status.displayName}',
-                style: const TextStyle(
-                  color: Colors.blue,
-                  decoration: TextDecoration.underline,
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Order #${order.id}',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 8),
+              Text('Email: ${order.email}'),
+              Text('Date: ${order.orderDate.toLocal()}'),
+              GestureDetector(
+                onTap: () => _navigateToStatusScreen(context, order.status),
+                child: Text(
+                  'Status: ${order.status.displayName}',
+                  style: const TextStyle(
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                icon: const Icon(Icons.edit, color: Colors.orange),
-                onPressed: () {
-                  _showChangeStatusDialog(context, ref, order);
-                },
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () {
+                    _showChangeStatusDialog(context, ref, order);
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
