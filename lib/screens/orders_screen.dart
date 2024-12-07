@@ -27,7 +27,6 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Orders'),
-        centerTitle: true,
       ),
       body: Column(
         children: [

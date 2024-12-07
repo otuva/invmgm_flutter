@@ -11,7 +11,6 @@ class DashboardScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
-        centerTitle: true,
       ),
       body: const SingleChildScrollView(
         padding: EdgeInsets.all(16.0),
