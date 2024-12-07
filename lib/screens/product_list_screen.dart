@@ -5,7 +5,6 @@ import 'package:invmgm_flutter/providers/category_provider.dart';
 import 'package:invmgm_flutter/widgets/category_dropdown.dart';
 import 'package:invmgm_flutter/models/product.dart';
 import 'package:invmgm_flutter/providers/product_provider.dart';
-import 'package:invmgm_flutter/services/product_service.dart';
 
 class ProductListScreen extends ConsumerWidget {
   const ProductListScreen({super.key});
@@ -41,72 +40,81 @@ class ProductListScreen extends ConsumerWidget {
       ),
     );
   }
+}
 
-  void _confirmDeleteProduct(
-      BuildContext context, WidgetRef ref, Product product) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Product'),
-        content: Text('Are you sure you want to delete "${product.name}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context); // Close confirmation dialog
-              await _deleteProduct(context, ref, product);
-            },
-            child: const Text('Delete'),
-          ),
-        ],
+Future<void> _deleteProduct(
+  BuildContext context,
+  WidgetRef ref,
+  Product product,
+) async {
+  try {
+    // Save a reference to the deleted product for undo functionality
+    final deletedProduct = product;
+
+    // Delete the product
+    await ref.read(productServiceProvider).deleteProduct(product.id);
+
+    // Refresh product list
+    ref.invalidate(allProductsProvider);
+
+    // Show undo snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Deleted "${product.name}".'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () async {
+            await ref.read(productServiceProvider).createProduct(
+                  name: deletedProduct.name,
+                  description: deletedProduct.description,
+                  price: deletedProduct.price,
+                  stock: deletedProduct.stock,
+                  categoryId: deletedProduct.categoryId,
+                );
+            ref.invalidate(allProductsProvider); // Refresh product list
+          },
+        ),
       ),
     );
-  }
-
-  Future<void> _deleteProduct(
-      BuildContext context, WidgetRef ref, Product product) async {
-    try {
-      // Save a reference to the deleted product for undo functionality
-      final deletedProduct = product;
-
-      // Delete the product
-      await ref.read(productServiceProvider).deleteProduct(product.id);
-
-      // Refresh product list
-      ref.invalidate(allProductsProvider);
-
-      // Show undo snackbar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Deleted "${product.name}".'),
-          action: SnackBarAction(
-            label: 'Undo',
-            onPressed: () async {
-              await ref.read(productServiceProvider).createProduct(
-                    name: deletedProduct.name,
-                    description: deletedProduct.description,
-                    price: deletedProduct.price,
-                    stock: deletedProduct.stock,
-                    categoryId: deletedProduct.categoryId,
-                  );
-              ref.invalidate(allProductsProvider); // Refresh product list
-            },
-          ),
-        ),
-      );
-    } catch (e) {
-      // Handle errors
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error deleting product: $e')),
-      );
-    }
+  } catch (e) {
+    // Handle errors
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error deleting product: $e')),
+    );
   }
 }
 
-void _showAddProductDialog(BuildContext context, WidgetRef ref) {
+void _confirmDeleteProduct(
+  BuildContext context,
+  WidgetRef ref,
+  Product product,
+) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Delete Product'),
+      content: Text('Are you sure you want to delete "${product.name}"?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            Navigator.pop(context); // Close confirmation dialog
+            await _deleteProduct(context, ref, product);
+          },
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
+}
+
+void _showAddProductDialog(
+  BuildContext context,
+  WidgetRef ref,
+) {
   final nameController = TextEditingController();
   final descriptionController = TextEditingController();
   final priceController = TextEditingController();
