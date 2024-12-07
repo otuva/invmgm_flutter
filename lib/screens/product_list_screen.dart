@@ -283,9 +283,12 @@ void _showAddProductDialog(
 
               if (name.isEmpty ||
                   description.isEmpty ||
-                  selectedCategory == null) {
+                  selectedCategory == null ||
+                  price <= 0 ||
+                  stock <= 0) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('All fields are required')),
+                  const SnackBar(
+                      content: Text('One or more fields are not valid')),
                 );
                 return;
               }
